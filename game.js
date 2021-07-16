@@ -33,14 +33,18 @@ class gamescene extends Phaser.Scene
 		this.load.image('stone', 'gameobjects/bigstone.png');
 		this.load.spritesheet('meteor', 'gameobjects/meteorsheetv2.png', {frameWidth: 128, frameHeight: 128});
 		this.load.spritesheet('coin', 'gameobjects/coinsheet.png', {frameWidth: 57.5, frameHeight: 82.25});
-		this.load.spritesheet('explode', 'gameobjects/explosion.png', {frameWidth: 96, frameHight: 96});
+		this.load.spritesheet('explode', 'gameobjects/explosion.png', {frameWidth: 96, frameHeight: 96});
+		this.load.spritesheet('buttonpause', 'gameobjects/buttonpause.png', {frameWidth:300, frameHeight: 110});
+		this.load.spritesheet('buttonresume', 'gameobjects/buttonresume.png', {frameWidth:300, frameHeight:110});
+		this.load.image('pausefon', 'gameobjects/pausefon.png');
 	}
 
 	create()
 	{
+		this.score = 0;
 		this.add.image(400,300, 'pole');
 
-		this.player = this.physics.add.image(Phaser.Math.Between(100,700),Phaser.Math.Between(100,500),'rover').setOrigin(0.5,0.5);
+		this.player = this.physics.add.image(Phaser.Math.Between(100,700),Phaser.Math.Between(100,500),'rover');
 		this.player.setBounce(0);
 		this.player.setCollideWorldBounds(true);
 
@@ -48,12 +52,21 @@ class gamescene extends Phaser.Scene
 		for (this.ifs=0; this.ifs<Phaser.Math.Between(0,6);this.ifs++){
 			this.stonesxy[this.ifs*2] = Phaser.Math.Between(100,700);
 			this.stonesxy[this.ifs*2+1] = Phaser.Math.Between(100,500); 
-			this.bigstones.create(this.stonesxy[this.ifs*2], this.stonesxy[this.ifs*2+1], 'stone').setOrigin(0.5,0.5);
+			this.bigstones.create(this.stonesxy[this.ifs*2], this.stonesxy[this.ifs*2+1], 'stone');
 		}
 
-		this.meteor = this.physics.add.sprite(-100,-100,'meteor').setOrigin(0.5,0.5);
-		this.explode = this.physics.add.sprite(-100,-100,'explode').setOrigin(0.5,0.5);
-		this.coin = this.physics.add.sprite(Phaser.Math.Between(100,700), Phaser.Math.Between(100,500), 'coin').setOrigin(0.5,0.5);
+		this.meteor = this.physics.add.sprite(-100,-100,'meteor');
+		this.explode = this.physics.add.sprite(-100,-100,'explode');
+		this.coin = this.physics.add.sprite(Phaser.Math.Between(100,700), Phaser.Math.Between(100,500), 'coin');
+		this.buttonpause = this.add.sprite(715,37.5,'buttonpause').setScale(0.5).setInteractive();
+		//this.buttonresume = this.add.sprite()
+
+		this.buttonpause.on('pointerdown', function(pointer){
+			this.setFrame(1);
+		});
+		this.buttonpause.on('pointerup', function(pointer){
+			this.setFrame(0);
+		});
 		
 		this.anims.create({
 			key:'meteor',
@@ -141,6 +154,11 @@ class gamescene extends Phaser.Scene
 		if (true){
 			this.coin.anims.play('coin', true);
 		}
+		if (this.buttonpause.frame.name == 0 && this.checkbuttonpause == 1){
+			this.scene.pause();
+			this.scene.launch('pause');
+		}
+		this.checkbuttonpause = this.buttonpause.frame.name;
 		try{
 			if (this.meteor.anims.currentFrame.index == 26){
 				this.playerx = this.player.body.position.x;
@@ -154,6 +172,7 @@ class gamescene extends Phaser.Scene
 		catch(e){}
 	}
 	collectcoin(player, coin){
+		this.score++;
 		this.newcoin = true;
 		this.scoreText.setText('Score: ' + this.score);
 		while(this.newcoin == true){
@@ -175,7 +194,6 @@ class gamescene extends Phaser.Scene
 			}
 			this.zxc = 0;
 		}
-		this.score += 1;
 	}
 
 	createMeteor(){
@@ -224,14 +242,6 @@ class menu extends Phaser.Scene
 		}
 		this.checkbutton = this.startbutton.frame.name;
 	}
-	switchToScene(key){
-		if (this.switchscene){
-			print('hui');
-			this.scene.switch(key);
-		}
-	}
-
-
 };
 
 class gameover extends Phaser.Scene
@@ -250,7 +260,7 @@ class gameover extends Phaser.Scene
 	create(data)
 	{
 		if(typeof(data) != typeof(1)){data = 0;}
-		this.gaveover = this.physics.add.image(400, 300, 'gameover');
+		this.gaveover = this.physics.add.image(400, 300, 'gameover').setAlpha(0);
 		this.buttonrestart = this.physics.add.sprite(250, 500, 'buttonrestart').setInteractive();
 		this.buttonmenu = this.physics.add.sprite(550, 500, 'buttonmenu').setInteractive();
 
@@ -284,11 +294,44 @@ class gameover extends Phaser.Scene
 		this.checkbuttonrestart = this.buttonrestart.frame.name;
 	}
 };
+class pause extends Phaser.Scene
+{
+	constructor()
+	{
+		super({ key: 'pause', active: false });
+
+	}
+	preload()
+	{
+		this.load.image('pausefon', 'gameobjects/pausefon.png');
+		this.load.spritesheet('buttonresume', 'gameobjects/buttonresume.png', {frameWidth:300, frameHeight:55});
+	}
+	create()
+	{
+		this.pausefon = this.physics.add.image(400, 300, 'pausefon');
+		this.buttonresume = this.physics.add.sprite(400, 450, 'buttonresume').setScale(0.5).setInteractive();
+
+		this.buttonresume.on('pointerdown', function(pointer){
+			this.setFrame(1);
+		});
+		this.buttonresume.on('pointerup', function(pointer){
+			this.setFrame(0);
+		});
+	}
+	update()
+	{
+		if (this.buttonresume.frame.name == 0 && this.checkbuttonresume == 1){
+			this.scene.sleep();
+			this.scene.resume('gamescene');
+		}
+		this.checkbuttonresume = this.buttonresume.frame.name;
+	}
+}
 var config = {
     type: Phaser.AUTO,
     width: 800,
     height: 600,
 	physics: {default: 'arcade'},
-    scene: [menu, gamescene, gameover]
+    scene: [menu, gamescene, gameover, pause]
 };
 let game = new Phaser.Game(config);
