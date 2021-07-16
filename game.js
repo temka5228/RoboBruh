@@ -35,8 +35,6 @@ class gamescene extends Phaser.Scene
 		this.load.spritesheet('coin', 'gameobjects/coinsheet.png', {frameWidth: 57.5, frameHeight: 82.25});
 		this.load.spritesheet('explode', 'gameobjects/explosion.png', {frameWidth: 96, frameHeight: 96});
 		this.load.spritesheet('buttonpause', 'gameobjects/buttonpause.png', {frameWidth:300, frameHeight: 110});
-		this.load.spritesheet('buttonresume', 'gameobjects/buttonresume.png', {frameWidth:300, frameHeight:110});
-		this.load.image('pausefon', 'gameobjects/pausefon.png');
 	}
 
 	create()
@@ -90,7 +88,7 @@ class gamescene extends Phaser.Scene
 
 		this.physics.add.overlap(this.player, this.coin, this.collectcoin, null, this);
 		this.physics.add.collider(this.player, this.bigstones);
-		this.physics.add.overlap(this.player, this.explode, hitMeteor, null, this);
+		this.physics.add.overlap(this.player, this.meteor, this.hitMeteor, null, this);
 		this.scoreText = this.add.text(16, 16, 'Score: 0', { fontSize: '32px', fill: '#000' });
 		this.cursors = this.input.keyboard.createCursorKeys();
 	}
@@ -159,6 +157,7 @@ class gamescene extends Phaser.Scene
 			this.scene.launch('pause');
 		}
 		this.checkbuttonpause = this.buttonpause.frame.name;
+		/*
 		try{
 			if (this.meteor.anims.currentFrame.index == 26){
 				this.playerx = this.player.body.position.x;
@@ -170,8 +169,10 @@ class gamescene extends Phaser.Scene
 			}
 		}
 		catch(e){}
+		*/
 	}
-	collectcoin(player, coin){
+	collectcoin(player, coin)
+	{
 		this.score++;
 		this.newcoin = true;
 		this.scoreText.setText('Score: ' + this.score);
@@ -196,7 +197,8 @@ class gamescene extends Phaser.Scene
 		}
 	}
 
-	createMeteor(){
+	createMeteor()
+	{
 		if (!this.explode.anims.isPlaying && !this.meteor.anims.isPlaying){
 			this.mx = Phaser.Math.Between(50,750);
 			this.my = Phaser.Math.Between(50,550);
@@ -206,6 +208,13 @@ class gamescene extends Phaser.Scene
 			this.explode.y = this.my;
 			this.meteor.anims.play('meteor', true);
 			this.explode.anims.play('explode', true);
+		}
+	}
+	hitMeteor(player, meteor)
+	{
+		if (this.meteor.anims.currentFrame.index == 26){
+			this.scene.pause();
+			this.scene.start('gameover', this.score);
 		}
 	}
 };
@@ -260,7 +269,7 @@ class gameover extends Phaser.Scene
 	create(data)
 	{
 		if(typeof(data) != typeof(1)){data = 0;}
-		this.gaveover = this.physics.add.image(400, 300, 'gameover').setAlpha(0);
+		this.gaveover = this.physics.add.image(400, 300, 'gameover');
 		this.buttonrestart = this.physics.add.sprite(250, 500, 'buttonrestart').setInteractive();
 		this.buttonmenu = this.physics.add.sprite(550, 500, 'buttonmenu').setInteractive();
 
@@ -303,12 +312,14 @@ class pause extends Phaser.Scene
 	}
 	preload()
 	{
-		this.load.image('pausefon', 'gameobjects/pausefon.png');
-		this.load.spritesheet('buttonresume', 'gameobjects/buttonresume.png', {frameWidth:300, frameHeight:55});
+		this.load.image('pause', 'gameobjects/pause.png');
+		this.load.image('black', 'gameobjects/black.png');
+		this.load.spritesheet('buttonresume', 'gameobjects/buttonresume.png', {frameWidth:300, frameHeight:110});
 	}
 	create()
 	{
-		this.pausefon = this.physics.add.image(400, 300, 'pausefon');
+		this.black = this.physics.add.image(400,300, 'black').setAlpha(0.5);
+		this.pausefon = this.physics.add.image(400, 300, 'pause');
 		this.buttonresume = this.physics.add.sprite(400, 450, 'buttonresume').setScale(0.5).setInteractive();
 
 		this.buttonresume.on('pointerdown', function(pointer){
@@ -321,7 +332,8 @@ class pause extends Phaser.Scene
 	update()
 	{
 		if (this.buttonresume.frame.name == 0 && this.checkbuttonresume == 1){
-			this.scene.sleep();
+			this.scene.pause();
+			this.scene.setVisible(false, 'pause');
 			this.scene.resume('gamescene');
 		}
 		this.checkbuttonresume = this.buttonresume.frame.name;
